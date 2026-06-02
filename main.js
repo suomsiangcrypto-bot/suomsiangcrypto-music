@@ -3,6 +3,13 @@ const path = require('path');
 const fs   = require('fs');
 let win;
 
+// ★★ แก้จอดำ: ปิด GPU/hardware acceleration ★★
+// อาการ DOM โหลดครบแต่หน้าต่างวาดเป็นสีดำ เกิดจาก GPU compositing
+// บนเครื่อง Windows บางรุ่น / VM / การ์ดจอเก่า — ปิดแล้วหาย
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-gpu-compositing');
+
 function createWindow() {
   win = new BrowserWindow({
     width:  500,
