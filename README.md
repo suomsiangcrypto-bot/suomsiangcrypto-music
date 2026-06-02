@@ -1,37 +1,26 @@
-# SUOMSIANGCRYPTO MUSIC — Electron Desktop
+# SUOMSIANGCRYPTO MUSIC — Electron Desktop (สร้างจากต้นฉบับ)
 
-ชุดไฟล์เวอร์ชัน Electron ที่สะอาดและพร้อมใช้งาน
+เวอร์ชัน Electron ที่สร้างจากไฟล์ต้นฉบับโดยตรง โค้ดเครื่องเล่นไม่ถูกแก้
+จึงทำงานเหมือนเวอร์ชัน Chrome เป๊ะ + แก้ปัญหาจอดำ (ปิด GPU acceleration)
 
-## ไฟล์ในโปรเจกต์
-- `main.js` — main process (มีตัวดัก error ถ้าโหลดหน้าไม่สำเร็จ)
-- `preload.js` — bridge ระหว่าง main กับ renderer
-- `index.html` — หน้าตาแอป
-- `app.js` — โค้ดทำงานฝั่งหน้าเว็บ
-- `player.css` — สไตล์/ธีม
-- `icons/` — ไอคอน (icon.png, icon.ico, logo.png) **เป็น placeholder — เอาไอคอนจริงมาทับได้**
-- `package.json` — config + build script (มี `--publish never` แล้ว)
+## ไฟล์
+- `main.js`     — Electron main process (ปิด GPU + ดักจับ error)
+- `index.html`  — สร้างจาก player.html ต้นฉบับ + override สำหรับ Electron
+- `player.js`   — โค้ดเครื่องเล่นต้นฉบับ (ไม่แก้)
+- `player.css`  — สไตล์ต้นฉบับ (ไม่แก้)
+- `icons/`      — ไอคอนจริงจากต้นฉบับ (icon.ico, icon.png, logo.png ฯลฯ)
+- `package.json`— build script (มี --publish never แล้ว)
 
 ## วิธีใช้
-
-### 1) ทดสอบรันก่อน (แนะนำ)
 ```
 npm install
-npm start
+npm start            # ทดสอบก่อน ควรเห็นหน้าตาแอปครบ
+npm run build-win    # build เป็น .exe -> โฟลเดอร์ dist/
 ```
-ถ้าหน้าตาแอปขึ้นปกติ = พร้อม build
 
-### 2) Build เป็น .exe
-```
-npm run build-win
-```
-ไฟล์จะอยู่ในโฟลเดอร์ `dist/`:
-- `SUOMSIANGCRYPTO-MUSIC-Portable.exe` (พกพา รันได้เลย)
-- `SUOMSIANGCRYPTO MUSIC Setup 1.0.0.exe` (ตัวติดตั้ง)
-
-## หมายเหตุ
-- ไฟล์เวอร์ชัน Chrome Extension (player.html, player.js, manifest.json,
-  background.js, sw.js, app.webmanifest) **ไม่ต้องใช้** ใน Electron
-  อย่าเอามาปนในโฟลเดอร์นี้
-- ถ้าจอยังดำตอนรัน จะมี dialog เด้งบอกสาเหตุ + เปิด DevTools อัตโนมัติ
-  (หรือกด F12 เองได้)
-- กด F12 = เปิด/ปิด DevTools
+## หมายเหตุสำคัญ
+- **จอดำแก้แล้ว**: main.js ปิด hardware acceleration (app.disableHardwareAcceleration
+  + disable-gpu) เพราะอาการ DOM โหลดครบแต่จอดำ = GPU วาดภาพไม่ได้ ไม่ใช่โค้ดพัง
+- โหลดไฟล์เพลงด้วยปุ่ม "เพิ่มไฟล์" หรือลากวาง — ไฟล์เก็บใน IndexedDB เหมือนเดิม
+- กด F12 = เปิด DevTools
+- ติดตั้งแค่ตัวเดียวพอ (Portable หรือ Installer) เป็นแอปเดียวกัน

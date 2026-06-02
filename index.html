@@ -2,62 +2,58 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SUOMSIANGCRYPTO MUSIC</title>
+<meta name="theme-color" content="#D4A017">
 <link rel="stylesheet" href="player.css">
 <style>
-/* Electron-specific overrides */
+/* ── Electron overrides ── */
+html,body{width:100% !important;max-width:100% !important;min-width:340px;}
 body{
-  width:100% !important;
-  max-width:100% !important;
-  min-width:340px;
-  border:none !important;
-  border-radius:0 !important;
-  box-shadow:none !important;
-  outline:none !important;
-  overflow-y:auto;
+  border:none !important;border-radius:0 !important;
+  box-shadow:none !important;outline:none !important;
+  overflow-y:auto;overflow-x:hidden;resize:none !important;
 }
-/* Hide resize handle (OS handles it) */
 #resizeHandle{display:none !important;}
-/* File drop indicator */
-body.drag-over::after{
-  content:'🎵  วางไฟล์เพลงที่นี่';
-  position:fixed;inset:0;z-index:9999;
-  background:rgba(8,6,0,.88);
-  color:#F5C842;font-size:24px;font-weight:700;
-  display:flex;align-items:center;justify-content:center;
-  border:3px dashed #D4A017;letter-spacing:2px;
-  pointer-events:none;
-}
+#waveCanvas{width:100% !important;}
+.video-wrap{width:100% !important;}
+.titlebar{-webkit-app-region:drag;}
+.titlebar button,.titlebar input,.sk,.border-picker,.mode-btn,.dl-btn{-webkit-app-region:no-drag;}
 </style>
+<script>
+/* chrome shim: กัน error จาก chrome.* ใน Electron */
+window.chrome = window.chrome || {};
+window.chrome.runtime = window.chrome.runtime || { sendMessage:function(){}, lastError:null };
+window.chrome.storage = window.chrome.storage || null;
+</script>
 </head>
 <body class="skin-gold" id="playerBody">
 
 <!-- TITLE BAR -->
 <div class="titlebar">
-  <img src="icons/icon.png" class="qcoin" alt="Logo">
+  <img src="icons/logo.png" class="qcoin" alt="Qubic Logo">
   <div class="tb-info">
     <div class="tb-name">SUOMSIANGCRYPTO MUSIC</div>
-    <div class="tb-sub">Powered by Qubic · MP3 &amp; MP4 · No Limit</div>
+    <div class="tb-sub">Powered by Qubic · MP3 &amp; MP4</div>
   </div>
   <div class="tb-right">
     <div class="status-led" id="statusDot"></div>
   </div>
 </div>
 
-<!-- SKIN ROW -->
+<!-- SKIN / BORDER COLOR ROW -->
 <div class="skin-row">
   <span class="skin-label">ธีม</span>
-  <div class="sk active" data-s="skin-gold"></div>
-  <div class="sk" data-s="skin-blue"></div>
-  <div class="sk" data-s="skin-green"></div>
-  <div class="sk" data-s="skin-purple"></div>
-  <div class="sk" data-s="skin-red"></div>
-  <div class="sk" data-s="skin-pink"></div>
-  <div class="sk" data-s="skin-cyan"></div>
+  <div class="sk active" data-s="skin-gold"    title="ทอง"></div>
+  <div class="sk"        data-s="skin-blue"    title="น้ำเงิน"></div>
+  <div class="sk"        data-s="skin-green"   title="เขียว"></div>
+  <div class="sk"        data-s="skin-purple"  title="ม่วง"></div>
+  <div class="sk"        data-s="skin-red"     title="แดง"></div>
+  <div class="sk"        data-s="skin-pink"    title="ชมพู"></div>
+  <div class="sk"        data-s="skin-cyan"    title="ฟ้า"></div>
   <span class="skin-label" style="margin-left:6px;">ขอบ</span>
-  <input type="color" id="borderColor" value="#D4A017" class="border-picker">
+  <input type="color" id="borderColor" value="#D4A017" title="เลือกสีขอบ" class="border-picker">
   <button class="mode-btn" id="modeBtn"><span id="mBtnI">📊</span><span id="mBtnL">Wave</span></button>
+  <button class="dl-btn" id="dlAppBtn">⬇ แอป</button>
 </div>
 
 <!-- VU METERS -->
@@ -67,18 +63,25 @@ body.drag-over::after{
     <div class="vu-box">
       <div class="vu-arc-wrap">
         <svg width="100%" height="52" viewBox="0 0 120 52" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <filter id="gf" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="1.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
           <path d="M8,50 A56,56 0 0,1 112,50" fill="none" stroke="#1a1600" stroke-width="8"/>
           <path d="M8,50 A56,56 0 0,1 36,12"  fill="none" stroke="#0a3a0a" stroke-width="5" opacity=".6"/>
           <path d="M36,12 A56,56 0 0,1 84,8"  fill="none" stroke="#4a4200" stroke-width="5" opacity=".6"/>
           <path d="M84,8 A56,56 0 0,1 112,50" fill="none" stroke="#5a0a00" stroke-width="5" opacity=".6"/>
-          <path d="M10,50 A54,54 0 0,1 34,13"  fill="none" stroke="#00dd44" stroke-width="2" opacity=".5"/>
-          <path d="M36,12 A56,56 0 0,1 84,8"   fill="none" stroke="#ffcc00" stroke-width="2" opacity=".4"/>
-          <path d="M86,8  A54,54 0 0,1 110,50" fill="none" stroke="#ff3300" stroke-width="2" opacity=".5"/>
+          <!-- เส้นสีสว่าง glow ด้านใน -->
+          <path d="M10,50 A54,54 0 0,1 34,13"  fill="none" stroke="#00dd44" stroke-width="2" opacity=".5" filter="url(#gf)"/>
+          <path d="M36,12 A56,56 0 0,1 84,8"   fill="none" stroke="#ffcc00" stroke-width="2" opacity=".4" filter="url(#gf)"/>
+          <path d="M86,8  A54,54 0 0,1 110,50" fill="none" stroke="#ff3300" stroke-width="2" opacity=".5" filter="url(#gf)"/>
         </svg>
         <div class="vu-needle" id="vuL"></div>
       </div>
       <div class="vu-marks"><span>-20</span><span>-10</span><span>0</span><span>+3</span></div>
-      <div class="vu-db" id="dbL">-40 dB</div>
+      <div class="vu-db" id="dbL">-12 dB</div>
     </div>
   </div>
   <div class="vu-wrap">
@@ -86,27 +89,43 @@ body.drag-over::after{
     <div class="vu-box">
       <div class="vu-arc-wrap">
         <svg width="100%" height="52" viewBox="0 0 120 52" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <filter id="gf" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="1.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
           <path d="M8,50 A56,56 0 0,1 112,50" fill="none" stroke="#1a1600" stroke-width="8"/>
           <path d="M8,50 A56,56 0 0,1 36,12"  fill="none" stroke="#0a3a0a" stroke-width="5" opacity=".6"/>
           <path d="M36,12 A56,56 0 0,1 84,8"  fill="none" stroke="#4a4200" stroke-width="5" opacity=".6"/>
           <path d="M84,8 A56,56 0 0,1 112,50" fill="none" stroke="#5a0a00" stroke-width="5" opacity=".6"/>
-          <path d="M10,50 A54,54 0 0,1 34,13"  fill="none" stroke="#00dd44" stroke-width="2" opacity=".5"/>
-          <path d="M36,12 A56,56 0 0,1 84,8"   fill="none" stroke="#ffcc00" stroke-width="2" opacity=".4"/>
-          <path d="M86,8  A54,54 0 0,1 110,50" fill="none" stroke="#ff3300" stroke-width="2" opacity=".5"/>
+          <!-- เส้นสีสว่าง glow ด้านใน -->
+          <path d="M10,50 A54,54 0 0,1 34,13"  fill="none" stroke="#00dd44" stroke-width="2" opacity=".5" filter="url(#gf)"/>
+          <path d="M36,12 A56,56 0 0,1 84,8"   fill="none" stroke="#ffcc00" stroke-width="2" opacity=".4" filter="url(#gf)"/>
+          <path d="M86,8  A54,54 0 0,1 110,50" fill="none" stroke="#ff3300" stroke-width="2" opacity=".5" filter="url(#gf)"/>
         </svg>
         <div class="vu-needle" id="vuR"></div>
       </div>
       <div class="vu-marks"><span>-20</span><span>-10</span><span>0</span><span>+3</span></div>
-      <div class="vu-db" id="dbR">-40 dB</div>
+      <div class="vu-db" id="dbR">-8 dB</div>
     </div>
   </div>
 </div>
 
 <!-- VISUALIZER + VIDEO -->
 <div class="media-wrap">
+  <!-- DRAG & DROP OVERLAY -->
+  <div id="dropZone" class="drop-zone">
+    <div class="drop-inner">
+      <div class="drop-icon">🎵</div>
+      <div class="drop-text">วางไฟล์ที่นี่</div>
+      <div class="drop-sub">MP3 · MP4 · WAV · OGG · FLAC · AAC<br>รองรับทุก Drive ในเครื่อง</div>
+    </div>
+  </div>
   <div class="wave-wrap" id="waveWrap">
     <canvas id="waveCanvas"></canvas>
-    <div class="no-file" id="noMsg">ลากไฟล์มาวาง หรือกด "เพิ่มไฟล์"</div>
+    <div class="no-file" id="noMsg">กด "เพิ่มไฟล์" เพื่อเริ่ม</div>
+    <!-- Visualizer mode buttons -->
     <div class="viz-btns" id="vizBtns">
       <button class="vbtn active" data-v="0">แท่ง</button>
       <button class="vbtn" data-v="1">วงกลม</button>
@@ -137,8 +156,8 @@ body.drag-over::after{
       <svg id="discSvg" viewBox="0 0 40 40" fill="none">
         <circle cx="20" cy="20" r="20" fill="#0d0a00"/>
         <circle cx="20" cy="20" r="15" fill="#1a1400" stroke="#D4A017" stroke-width="0.6"/>
-        <circle cx="20" cy="20" r="8" fill="#0d0a00"/>
-        <circle cx="20" cy="20" r="3" fill="#D4A017"/>
+        <circle cx="20" cy="20" r="8"  fill="#0d0a00"/>
+        <circle cx="20" cy="20" r="3"  fill="#D4A017"/>
       </svg>
       <div class="art-badge" id="artBadge"></div>
     </div>
@@ -155,27 +174,43 @@ body.drag-over::after{
   <div class="save-status" id="saveStatus"></div>
 </div>
 
-<!-- VOLUME + KNOBS -->
+<!-- VOLUME + BASS/TREBLE -->
 <div class="vol-bass-row">
   <div class="knob-group">
     <div class="knob-label">VOL</div>
-    <div class="knob-wrap"><div class="knob" id="volKnob" data-val="85"><div class="knob-dot"></div></div></div>
+    <div class="knob-wrap">
+      <div class="knob" id="volKnob" data-val="85">
+        <div class="knob-dot"></div>
+      </div>
+    </div>
     <div class="knob-val" id="volVal">85</div>
   </div>
   <input type="range" class="vol-sl" id="volSl" min="0" max="100" step="1" value="85">
   <div class="knob-group">
     <div class="knob-label">BASS</div>
-    <div class="knob-wrap"><div class="knob knob-sm" id="bassKnob" data-val="50"><div class="knob-dot"></div></div></div>
+    <div class="knob-wrap">
+      <div class="knob knob-sm" id="bassKnob" data-val="50">
+        <div class="knob-dot"></div>
+      </div>
+    </div>
     <div class="knob-val" id="bassVal">0</div>
   </div>
   <div class="knob-group">
     <div class="knob-label">MID</div>
-    <div class="knob-wrap"><div class="knob knob-sm" id="midKnob" data-val="50"><div class="knob-dot"></div></div></div>
+    <div class="knob-wrap">
+      <div class="knob knob-sm" id="midKnob" data-val="50">
+        <div class="knob-dot"></div>
+      </div>
+    </div>
     <div class="knob-val" id="midVal">0</div>
   </div>
   <div class="knob-group">
     <div class="knob-label">TREBLE</div>
-    <div class="knob-wrap"><div class="knob knob-sm" id="trebleKnob" data-val="50"><div class="knob-dot"></div></div></div>
+    <div class="knob-wrap">
+      <div class="knob knob-sm" id="trebleKnob" data-val="50">
+        <div class="knob-dot"></div>
+      </div>
+    </div>
     <div class="knob-val" id="trebleVal">0</div>
   </div>
   <span class="vpct" id="vpct">85%</span>
@@ -184,10 +219,10 @@ body.drag-over::after{
 <!-- CONTROLS -->
 <div class="controls">
   <button class="cbtn" id="btnShuffle" title="สลับ">⇄</button>
-  <button class="cbtn" id="btnPrev" title="ก่อนหน้า">⏮</button>
+  <button class="cbtn" id="btnPrev"    title="ก่อนหน้า">⏮</button>
   <button class="cbtn play" id="btnPlay">▶</button>
-  <button class="cbtn" id="btnNext" title="ถัดไป">⏭</button>
-  <button class="cbtn" id="btnRepeat" title="วนซ้ำ">⟳</button>
+  <button class="cbtn" id="btnNext"    title="ถัดไป">⏭</button>
+  <button class="cbtn" id="btnRepeat"  title="วนซ้ำ">⟳</button>
 </div>
 
 <!-- EQ -->
@@ -216,25 +251,50 @@ body.drag-over::after{
       <button class="fbtn active" data-f="all">ทั้งหมด</button>
       <button class="fbtn" data-f="audio">🎵 MP3</button>
       <button class="fbtn" data-f="video">🎬 MP4</button>
-      <button class="fbtn add-inline-btn" id="addBtnInline" title="เพิ่มไฟล์">＋ เพิ่ม</button>
+      <button class="fbtn add-inline-btn" id="addBtnInline" title="เพิ่มไฟล์เพลง">＋ เพิ่ม</button>
     </div>
     <button class="clear-btn" id="clearBtn">✕</button>
   </div>
-  <div class="pl-list" id="plList"><div class="pl-empty">ลากไฟล์มาวาง หรือกด เพิ่มไฟล์</div></div>
+  <div class="pl-list" id="plList"><div class="pl-empty">ยังไม่มีไฟล์</div></div>
   <div class="storage-info" id="storageInfo"></div>
   <div class="add-area">
     <button class="add-big-btn" id="addBtn">
       <span class="add-icon">🎵</span>
       <div class="add-text">
         <span class="add-main">เพิ่มไฟล์เพลง</span>
-        <span class="add-sub">ลากไฟล์มาวาง หรือกดเพื่อเลือก · รองรับทุก Drive</span>
+        <span class="add-sub">MP3 · MP4 · WAV · OGG · FLAC · AAC</span>
       </div>
       <span class="add-plus">＋</span>
     </button>
   </div>
-  <input type="file" id="fileInput" accept=".mp3,.mp4,.wav,.ogg,.flac,.aac,.m4a,.webm,.mkv,.mov,.avi,.wma,audio/*,video/*" multiple style="display:none">
+  <input type="file" id="fileInput" accept=".mp3,.mp4,.wav,.ogg,.flac,.aac,.m4a,.webm,.mkv,.mov,.avi,.wma,.alac,audio/*,video/*" multiple>
 </div>
 
-<script src="app.js"></script>
+<!-- INSTALL MODAL -->
+<div id="dlModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;">
+  <div class="dl-modal-box">
+    <div class="dl-modal-hdr">
+      <span>📲 ติดตั้งเป็นแอป Desktop</span>
+      <button id="dlClose">✕</button>
+    </div>
+    <div class="dl-step"><b>1.</b> กด <code>⋮</code> มุมขวาบน Chrome</div>
+    <div class="dl-step"><b>2.</b> เลือก <b>"บันทึกและแชร์"</b></div>
+    <div class="dl-step"><b>3.</b> กด <b>"ติดตั้งเป็นแอป..."</b></div>
+    <div class="dl-step"><b>4.</b> กด <b>"ติดตั้ง"</b> → ไอคอนขึ้น Desktop!</div>
+    <div class="dl-note">✅ ฟรี · ไม่หมดอายุ · ไม่ต้องโหลดอะไรเพิ่ม</div>
+    <button class="dl-ok" id="dlOk">เข้าใจแล้ว ปิด</button>
+  </div>
+</div>
+
+<script src="player.js"></script>
+
+<!-- RESIZE HANDLE -->
+<div id="resizeHandle" title="ลากเพื่อปรับขนาด">
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <line x1="13" y1="5"  x2="5"  y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="13" y1="9"  x2="9"  y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="13" y1="13" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+</div>
 </body>
 </html>
