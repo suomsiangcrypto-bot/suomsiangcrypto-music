@@ -98,7 +98,7 @@ function stopAll(){
 
 // ── ADD FILES from Electron dialog ────────────────────────
 async function openFileDialog(){
-  if(!window.electronAPI){document.getElementById('fileInput').click();return;}
+  if(!window.electronAPI){var fi=document.getElementById('fileInput');if(fi)fi.click();return;}
   var paths = await window.electronAPI.openFiles();
   if(!paths||!paths.length)return;
   addFilePaths(paths);
@@ -145,15 +145,15 @@ function play(id,idx){
       if(t.type==='video') playVideoUrl(t,url);
       else                 playAudioUrl(t,url);
     });
+  } else {
+    showErr('electronAPI ไม่พร้อม (preload โหลดไม่ติด)');
   }
 }
 
 // ── PLAY VIDEO ────────────────────────────────────────────
 function playVideoUrl(t,url){
   initAudio();
-  var oldUrl=videoEl.src&&videoEl.src.startsWith('blob:')?videoEl.src:null;
   videoEl.src=url;
-  if(oldUrl)URL.revokeObjectURL(oldUrl);
   videoEl.volume=parseInt(document.getElementById('volSl').value,10)/100;
   videoEl.loop=false;videoEl.load();
 
@@ -379,7 +379,7 @@ function renderPL(){
     pl.appendChild(el);
   });
 }
-document.querySelectorAll('.fbtn').forEach(function(btn){btn.addEventListener('click',function(){plFilter=this.dataset.f;document.querySelectorAll('.fbtn').forEach(function(b){b.classList.remove('active');});this.classList.add('active');renderPL();});});
+document.querySelectorAll('.fbtn').forEach(function(btn){btn.addEventListener('click',function(){if(this.id==='addBtnInline')return;plFilter=this.dataset.f;document.querySelectorAll('.fbtn').forEach(function(b){b.classList.remove('active');});this.classList.add('active');renderPL();});});
 document.querySelectorAll('.vbtn').forEach(function(btn){btn.addEventListener('click',function(){vizMode=parseInt(this.dataset.v,10);localStorage.setItem('sm_vizMode',vizMode);document.querySelectorAll('.vbtn').forEach(function(b){b.classList.remove('active');});this.classList.add('active');});});
 (function(){document.querySelectorAll('.vbtn').forEach(function(b){b.classList.toggle('active',parseInt(b.dataset.v)===vizMode);});})();
 
@@ -401,25 +401,25 @@ document.addEventListener('dragleave',function(e){dragCount--;if(dragCount<=0){d
 document.addEventListener('dragover',function(e){e.preventDefault();e.dataTransfer.dropEffect='copy';});
 document.addEventListener('drop',function(e){
   e.preventDefault();dragCount=0;document.body.classList.remove('drag-over');
-  var items=e.dataTransfer.items;
+  var files=e.dataTransfer.files;
   var paths=[];
-  if(items){
-    for(var i=0;i<items.length;i++){
-      var entry=items[i].webkitGetAsEntry&&items[i].webkitGetAsEntry();
-      if(entry&&entry.isFile){
-        (function(en){en.file(function(f){if(ACCEPT_EXT.test(f.name)||f.type.match(/^(audio|video)\//)){paths.push(f.path||f.name);}if(paths.length)addFilePaths(paths);});})(entry);
+  if(files&&files.length){
+    for(var i=0;i<files.length;i++){
+      var f=files[i];
+      if(ACCEPT_EXT.test(f.name)||(f.type&&f.type.match(/^(audio|video)\//))){
+        if(f.path)paths.push(f.path);
       }
     }
   }
+  if(paths.length)addFilePaths(paths);
 });
 
 // ── FULLSCREEN ────────────────────────────────────────────
-var fsTimer=null;
 function isFS(){return!!(document.fullscreenElement||document.webkitFullscreenElement);}
 function toggleFS(){if(isFS()){if(document.exitFullscreen)document.exitFullscreen();}else{if(videoWrap.requestFullscreen)videoWrap.requestFullscreen();}}
 document.addEventListener('fullscreenchange',function(){var btn=document.getElementById('fsBtn');if(isFS()){if(btn)btn.textContent='✕';}else{if(btn)btn.textContent='⛶';}});
 videoWrap.addEventListener('click',function(e){if(e.target.id==='fsBtn'||(e.target.closest&&e.target.closest('#fsBtn')))return;togglePlay();});
-document.getElementById('fsBtn').addEventListener('click',function(e){e.stopPropagation();toggleFS();});
+var fsBtn=document.getElementById('fsBtn');if(fsBtn)fsBtn.addEventListener('click',function(e){e.stopPropagation();toggleFS();});
 videoEl.addEventListener('play',function(){var el=document.getElementById('vidPI');if(el)el.textContent='⏸';});
 videoEl.addEventListener('pause',function(){var el=document.getElementById('vidPI');if(el)el.textContent='▶';});
 

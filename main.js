@@ -1,7 +1,6 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs   = require('fs');
-
 let win;
 
 function createWindow() {
@@ -12,7 +11,7 @@ function createWindow() {
     minHeight: 480,
     maxWidth:  1200,
     maxHeight: 1400,
-    resizable: true,          // จับมุมขยายได้
+    resizable: true,
     frame: true,
     title: 'SUOMSIANGCRYPTO MUSIC',
     icon: path.join(__dirname, 'icons', 'icon.png'),
@@ -21,13 +20,24 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      // อนุญาตโหลดไฟล์ local ทุก drive
-      webSecurity: false,
+      webSecurity: false, // อนุญาตโหลดไฟล์ local ทุก drive
     },
     autoHideMenuBar: true,
   });
 
-  win.loadFile('index.html');
+  // ใช้ path เต็ม กัน path เพี้ยนตอน build เป็น .exe
+  win.loadFile(path.join(__dirname, 'index.html'));
+
+  // ดักจับกรณีโหลดหน้าไม่สำเร็จ — เด้งบอกสาเหตุจริง + เปิด DevTools
+  win.webContents.on('did-fail-load', (e, errorCode, errorDesc, validatedURL) => {
+    win.webContents.openDevTools();
+    dialog.showErrorBox(
+      'โหลดหน้าไม่สำเร็จ',
+      'errorCode: ' + errorCode + '\n' +
+      'errorDesc: ' + errorDesc + '\n' +
+      'url: ' + validatedURL
+    );
+  });
 
   // เปิด DevTools เมื่อกด F12
   win.webContents.on('before-input-event', (event, input) => {
@@ -39,7 +49,7 @@ app.whenReady().then(createWindow);
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 
-// ── IPC: เปิด file dialog ────────────────────────────────
+// ── IPC: เปิด file dialog เลือกไฟล์ ───────────────────────
 ipcMain.handle('open-files', async () => {
   const result = await dialog.showOpenDialog(win, {
     title: 'เลือกไฟล์เพลง',
@@ -53,24 +63,17 @@ ipcMain.handle('open-files', async () => {
   return result.filePaths;
 });
 
-// ── IPC: อ่านไฟล์เป็น base64 (รองรับไฟล์ใหญ่ streaming) ──
+// ── IPC: อ่าน metadata ไฟล์ ───────────────────────────────
 ipcMain.handle('read-file-path', async (event, filePath) => {
   try {
     const stat = fs.statSync(filePath);
-    return {
-      ok: true,
-      path: filePath,
-      size: stat.size,
-      name: path.basename(filePath),
-    };
-  } catch(e) {
+    return { ok: true, path: filePath, size: stat.size, name: path.basename(filePath) };
+  } catch (e) {
     return { ok: false, error: e.message };
   }
 });
 
-// ── IPC: Get file URL (ให้ renderer โหลดตรงจาก disk) ──────
+// ── IPC: แปลง path เป็น file:// URL (เล่นตรงจาก disk) ──────
 ipcMain.handle('get-file-url', async (event, filePath) => {
-  // แปลง path เป็น file:// URL
-  const url = 'file:///' + filePath.replace(/\\/g, '/');
-  return url;
+  return 'file:///' + filePath.replace(/\\/g, '/');
 });

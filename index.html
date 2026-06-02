@@ -19,9 +19,6 @@ body{
 }
 /* Hide resize handle (OS handles it) */
 #resizeHandle{display:none !important;}
-/* Drag region for frameless titlebar */
-.titlebar{-webkit-app-region:drag;}
-.titlebar button,.titlebar input,.sk,.border-picker{-webkit-app-region:no-drag;}
 /* File drop indicator */
 body.drag-over::after{
   content:'🎵  วางไฟล์เพลงที่นี่';
@@ -235,6 +232,7 @@ body.drag-over::after{
       <span class="add-plus">＋</span>
     </button>
   </div>
+  <input type="file" id="fileInput" accept=".mp3,.mp4,.wav,.ogg,.flac,.aac,.m4a,.webm,.mkv,.mov,.avi,.wma,audio/*,video/*" multiple style="display:none">
 </div>
 
 <script src="app.js"></script>
